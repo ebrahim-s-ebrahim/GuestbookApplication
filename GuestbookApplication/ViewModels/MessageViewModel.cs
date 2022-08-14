@@ -6,5 +6,6 @@ namespace GuestbookApplication.ViewModels
     {
         public int MessageId { get; set; }
         public string MessageContent { get; set; }
+        public int UserId { get; set; }
     }
 }

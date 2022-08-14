@@ -100,6 +100,23 @@ namespace GuestbookApplication.Controllers
             }
         }
 
+        [HttpGet("GetAllMessagesByUserID")]
+        public async Task<ActionResult<List<MessageViewModel>>> GetAllMessagesByUserID(int userId)
+        {
+            try
+            {
+                if (userId < 1)
+                    return BadRequest("Invalid user id.");
+
+                var message = await _context.QueryFirstAsync<MessageViewModel>("select * from messages where userId = @Id", new { Id = userId });
+                return Ok(message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
 
         private async Task<IEnumerable<UserViewModel>> SelectAllUsers()
         {

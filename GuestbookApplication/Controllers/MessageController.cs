@@ -57,7 +57,7 @@ namespace GuestbookApplication.Controllers
                 if (messages == null)
                     return BadRequest("Invalid message.");
 
-                await _context.ExecuteAsync("insert into messages (messageContent) values (@MessageContent)", messages);
+                await _context.ExecuteAsync("insert into messages (messageContent, userId) values (@MessageContent, @UserId)", messages);
                 return Ok(await SelectAllMessages());
             }
             catch (Exception ex)
