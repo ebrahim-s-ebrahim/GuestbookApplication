@@ -1,6 +1,7 @@
 ﻿using Dapper;
+using GuestbookApplication.DTOs;
 using GuestbookApplication.Models;
-using Microsoft.AspNetCore.Http;
+using GuestbookApplication.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using System.Data.SqlClient;
 
@@ -10,60 +11,94 @@ namespace GuestbookApplication.Controllers
     [ApiController]
     public class MessageController : ControllerBase
     {
-        private readonly IConfiguration _config;
+        private readonly SqlConnection _context;
 
-        public MessageController(IConfiguration config)
+        public MessageController(GuestBookContext connection)
         {
-            _config = config;
+            _context = connection.DbContext;
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<Messages>>> GetAllMessages()
+        public async Task<ActionResult<List<MessageViewModel>>> GetAllMessages()
         {
-            using var connection = new SqlConnection(_config.GetConnectionString("Default"));
-            var messages = await connection.QueryAsync<Messages>("select * from messages");
-            return Ok(messages);
+            try
+            {
+                var messages = await _context.QueryAsync<MessageViewModel>("select * from messages");
+                return Ok(messages);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet("messageId")]
-        public async Task<ActionResult<Messages>> GetMessage(int messageId)
+        public async Task<ActionResult<MessageViewModel>> GetMessageById(int messageId)
         {
-            using var connection = new SqlConnection(_config.GetConnectionString("Default"));
-            var message = await connection.QueryFirstAsync<Messages>("select * from messages where messageId = @Id", new { Id = messageId });
-            return Ok(message);
+            try
+            {
+                if (messageId < 1)
+                    return BadRequest("Invalid message id.");
+
+                var message = await _context.QueryFirstAsync<MessageViewModel>("select * from messages where messageId = @Id", new { Id = messageId });
+                return Ok(message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPost]
-        public async Task<ActionResult<List<Messages>>> CreateMessage(Messages messages)
+        public async Task<ActionResult<MessageViewModel>> CreateMessage(MessageDTO messages)
         {
-            using var connection = new SqlConnection(_config.GetConnectionString("Default"));
-            await connection.ExecuteAsync("insert into messages (messageContent) values (@MessageContent)", messages);
-            return Ok(await SelectAllMessages(connection));
+            try
+            {
+                if (messages == null)
+                    return BadRequest("Invalid message.");
+
+                await _context.ExecuteAsync("insert into messages (messageContent) values (@MessageContent)", messages);
+                return Ok(await SelectAllMessages());
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPut]
-        public async Task<ActionResult<List<Messages>>> UpdateMessage(Messages messages)
+        public async Task<ActionResult<MessageViewModel>> UpdateMessage(MessageUpdateDTO updatedMessage)
         {
-            using var connection = new SqlConnection(_config.GetConnectionString("Default"));
-            await connection.ExecuteAsync("update messages set messageContent = @MessageContent where messageId = @Id", messages);
-            return Ok(await SelectAllMessages(connection));
+            try
+            {
+                await _context.ExecuteAsync("update messages set messageContent = @MessageContent where messageId = @Id", new { MessageContent = updatedMessage.MessageContent, Id = updatedMessage.MessageId });
+                var message = await _context.QueryFirstAsync<MessageViewModel>("select * from messages where messageId = @Id", new { Id = updatedMessage.MessageId });
+                return Ok(message);
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpDelete("{messageId}")]
-        public async Task<ActionResult<List<Messages>>> DeleteMessage(int messageId)
+        public async Task<ActionResult> DeleteMessage(int messageId)
         {
-            using var connection = new SqlConnection(_config.GetConnectionString("Default"));
-            await connection.ExecuteAsync("delete from messages where messageId = @Id", new { Id = messageId });
-            return Ok(await SelectAllMessages(connection));
+            try
+            {
+                await _context.ExecuteAsync("delete from messages where messageId = @Id", new { Id = messageId });
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
-
-
-
-
-        private static async Task<IEnumerable<Users>> SelectAllMessages(SqlConnection connection)
+        private async Task<IEnumerable<MessageViewModel>> SelectAllMessages()
         {
-            return await connection.QueryAsync<Users>("select * from messages");
+            return await _context.QueryAsync<MessageViewModel>("select * from messages");
         }
     }
 }

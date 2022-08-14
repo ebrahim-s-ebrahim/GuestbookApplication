@@ -1,6 +1,7 @@
 ﻿using Dapper;
+using GuestbookApplication.DTOs;
 using GuestbookApplication.Models;
-using Microsoft.AspNetCore.Http;
+using GuestbookApplication.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using System.Data.SqlClient;
 
@@ -10,60 +11,99 @@ namespace GuestbookApplication.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
-        private readonly IConfiguration _config;
+        private readonly SqlConnection _context;
 
-        public UserController(IConfiguration config)
+        public UserController(GuestBookContext connection)
         {
-            _config = config;
+            _context = connection.DbContext;
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<Users>>> GetAllUsers()
+        public async Task<ActionResult<List<UserViewModel>>> GetAllUsers()
         {
-            using var connection = new SqlConnection(_config.GetConnectionString("Default"));
-            var users = await connection.QueryAsync<Users>("select * from users");
-            return Ok(users);
+            try
+            {
+                var users = await _context.QueryAsync<UserViewModel>("select * from users");
+                return Ok(users);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet("userId")]
-        public async Task<ActionResult<Users>> GetUser(int userId)
+        public async Task<ActionResult<UserViewModel>> GetUserById(int userId)
         {
-            using var connection = new SqlConnection(_config.GetConnectionString("Default"));
-            var user = await connection.QueryFirstAsync<Users>("select * from users where userId = @Id", new { Id = userId});
-            return Ok(user);
+            try
+            {
+                if (userId < 1)
+                    return BadRequest("Invalid user id.");
+
+                var user = await _context.QueryFirstAsync<UserViewModel>("select * from users where userId = @Id", new { Id = userId });
+                return Ok(user);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPost]
-        public async Task<ActionResult<List<Users>>> CreateUser(Users users)
+        public async Task<ActionResult<UserViewModel>> CreateUser(UserDTO users)
         {
-            using var connection = new SqlConnection(_config.GetConnectionString("Default"));
-            await connection.ExecuteAsync("insert into users (username, password) values (@Username, @Password)", users);
-            return Ok(await SelectAllUsers(connection));
+            try
+            {
+                if (users == null)
+                    return BadRequest("Invalid user.");
+
+                await _context.ExecuteAsync("insert into users (username, password) values (@Username, @Password)", users);
+                return Ok(await SelectAllUsers());
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPut]
-        public async Task<ActionResult<List<Users>>> UpdateUser(Users users)
+        public async Task<ActionResult<UserViewModel>> UpdateUser(UserUpdateDTO user)
         {
-            using var connection = new SqlConnection(_config.GetConnectionString("Default"));
-            await connection.ExecuteAsync("update users set username = @UserName, password = @Password where userId = @Id", users);
-            return Ok(await SelectAllUsers(connection));
+            try
+            {
+                if (user == null)
+                    return BadRequest("Invalid user.");
+
+                await _context.ExecuteAsync("update users set username = @UserName, password = @Password where userid = @Id", new { UserName = user.UserName, Password = user.Password, Id = user.UserId});
+                return Ok(await SelectAllUsers());
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpDelete("{userId}")]
-        public async Task<ActionResult<List<Users>>> DeleteUser(int userId)
+        public async Task<ActionResult> DeleteUser(int userId)
         {
-            using var connection = new SqlConnection(_config.GetConnectionString("Default"));
-            await connection.ExecuteAsync("delete from users where userId = @Id", new { Id = userId });
-            return Ok(await SelectAllUsers(connection));
+            try
+            {
+                if (userId < 1)
+                    return BadRequest("Invalid user id.");
+
+                await _context.ExecuteAsync("delete from users where userId = @Id", new { Id = userId });
+                return Ok(await SelectAllUsers());
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
 
-
-
-
-        private static async Task<IEnumerable<Users>> SelectAllUsers(SqlConnection connection)
+        private async Task<IEnumerable<UserViewModel>> SelectAllUsers()
         {
-            return await connection.QueryAsync<Users>("select * from users");
+            return await _context.QueryAsync<UserViewModel>("select * from users");
         }
     }
 }
