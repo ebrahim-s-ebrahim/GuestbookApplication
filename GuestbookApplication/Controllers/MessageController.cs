@@ -96,6 +96,47 @@ namespace GuestbookApplication.Controllers
             }
         }
 
+        [HttpPost("ReplyToMessage")]
+        public async Task<ActionResult<List<ReplyViewModel>>> ReplyToMessage(ReplyDTO reply)
+        {
+            try
+            {
+                if (reply == null)
+                    return BadRequest("Invalid message.");
+
+                await _context.ExecuteAsync("insert into messages (messageContent, userId, parentMessageId) values (@MessageContent, @UserId,@ParentMessageId)", reply);
+
+                return Ok(await SelectAllMessages());
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpGet("GetReplies/{messageId}")]
+        public async Task<ActionResult<ReplyViewModel>> GetMessageReplies(int messageId)
+        {
+            try
+            {
+                if (messageId < 1)
+                    return BadRequest("Invalid message id.");
+
+                var parent = await _context.QueryFirstAsync<ReplyViewModel>("select * from messages where messageId = @Id", new { Id = messageId });
+                if (parent is null)
+                    return NotFound("Message not found.");
+
+                parent.Children = (await _context.QueryAsync<MessageViewModel>("select * from messages where ParentMessageId = @Id", new { Id = messageId })).ToList();
+                return Ok(parent);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
+
         private async Task<IEnumerable<MessageViewModel>> SelectAllMessages()
         {
             return await _context.QueryAsync<MessageViewModel>("select * from messages");

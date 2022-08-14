@@ -31,7 +31,11 @@ namespace GuestbookApplication.Controllers
                 return BadRequest(ex.Message);
             }
         }
-
+        /// <summary>
+        /// Gets user by his / her Id
+        /// </summary>
+        /// <param name="userId">The Id to get user with</param>
+        /// <returns>The user with sent Id</returns>
         [HttpGet("userId")]
         public async Task<ActionResult<UserViewModel>> GetUserById(int userId)
         {
@@ -50,15 +54,36 @@ namespace GuestbookApplication.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<UserViewModel>> CreateUser(UserDTO users)
+        public async Task<ActionResult<UserViewModel>> CreateUser(UserDTO user)
         {
             try
             {
-                if (users == null)
+                if (user == null)
                     return BadRequest("Invalid user.");
 
-                await _context.ExecuteAsync("insert into users (username, password) values (@Username, @Password)", users);
+                await _context.ExecuteAsync("insert into users (username, password) values (@Username, @Password)", user);
                 return Ok(await SelectAllUsers());
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("login")]
+        public async Task<ActionResult<UserViewModel>> Login(UserDTO user)
+        {
+            try
+            {
+                if (user == null)
+                    return BadRequest("Invalid user.");
+
+                var existingUser = await _context.QueryAsync<User>("select * from users where userName = @Username and password = @Password", new { UserName = user.UserName, Password = user.Password });
+
+                if (existingUser is null || !existingUser.Any())
+                    return Unauthorized("Invalid username or password");
+
+                return Ok("Successful login");
             }
             catch (Exception ex)
             {
