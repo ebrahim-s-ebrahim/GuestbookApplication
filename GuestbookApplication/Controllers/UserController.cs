@@ -18,7 +18,7 @@ namespace GuestbookApplication.Controllers
             _context = connection.DbContext;
         }
 
-        [HttpGet]
+        [HttpGet("GetAll")]
         public async Task<ActionResult<List<UserViewModel>>> GetAllUsers()
         {
             try
@@ -32,7 +32,7 @@ namespace GuestbookApplication.Controllers
             }
         }
         /// <summary>
-        /// Gets user by his / her Id
+        /// Gets user by his/her Id
         /// </summary>
         /// <param name="userId">The Id to get user with</param>
         /// <returns>The user with sent Id</returns>
@@ -53,7 +53,12 @@ namespace GuestbookApplication.Controllers
             }
         }
 
-        [HttpPost]
+        /// <summary>
+        /// Create a user 
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns>All users with the created one</returns>
+        [HttpPost("AddUser")]
         public async Task<ActionResult<UserViewModel>> CreateUser(UserDTO user)
         {
             try
@@ -70,6 +75,11 @@ namespace GuestbookApplication.Controllers
             }
         }
 
+        /// <summary>
+        /// a specific user login
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns>user credentials</returns>
         [HttpPost("login")]
         public async Task<ActionResult<UserViewModel>> Login(UserDTO user)
         {
@@ -90,8 +100,12 @@ namespace GuestbookApplication.Controllers
                 return BadRequest(ex.Message);
             }
         }
-
-        [HttpPut]
+        /// <summary>
+        /// Edit user information
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns>user with updated credentials</returns>
+        [HttpPut("EditUser")]
         public async Task<ActionResult<UserViewModel>> UpdateUser(UserUpdateDTO user)
         {
             try
@@ -125,6 +139,11 @@ namespace GuestbookApplication.Controllers
             }
         }
 
+        /// <summary>
+        /// Get all messages of a certain user
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns>a list of all messages by a certain user</returns>
         [HttpGet("GetAllMessagesByUserID")]
         public async Task<ActionResult<List<MessageViewModel>>> GetAllMessagesByUserID(int userId)
         {

@@ -13,6 +13,7 @@ namespace GuestbookApplication.Models
             _config = config;
         }
 
+        //To make a single instance of the connection throughout the application
         public SqlConnection DbContext
         {
             get

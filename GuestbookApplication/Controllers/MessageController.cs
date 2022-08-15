@@ -18,7 +18,7 @@ namespace GuestbookApplication.Controllers
             _context = connection.DbContext;
         }
 
-        [HttpGet]
+        [HttpGet("GetAll")]
         public async Task<ActionResult<List<MessageViewModel>>> GetAllMessages()
         {
             try
@@ -32,6 +32,11 @@ namespace GuestbookApplication.Controllers
             }
         }
 
+        /// <summary>
+        /// Get a certain message by its Id
+        /// </summary>
+        /// <param name="messageId"></param>
+        /// <returns>the message and the userId who wrote the message</returns>
         [HttpGet("messageId")]
         public async Task<ActionResult<MessageViewModel>> GetMessageById(int messageId)
         {
@@ -49,15 +54,20 @@ namespace GuestbookApplication.Controllers
             }
         }
 
-        [HttpPost]
-        public async Task<ActionResult<MessageViewModel>> CreateMessage(MessageDTO messages)
+        /// <summary>
+        /// Write a message
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns>All messsages with the created one</returns>
+        [HttpPost("WriteMessage")]
+        public async Task<ActionResult<MessageViewModel>> CreateMessage(MessageDTO message)
         {
             try
             {
-                if (messages == null)
+                if (message == null)
                     return BadRequest("Invalid message.");
 
-                await _context.ExecuteAsync("insert into messages (messageContent, userId) values (@MessageContent, @UserId)", messages);
+                await _context.ExecuteAsync("insert into messages (messageContent, userId) values (@MessageContent, @UserId)", message);
                 return Ok(await SelectAllMessages());
             }
             catch (Exception ex)
@@ -66,7 +76,12 @@ namespace GuestbookApplication.Controllers
             }
         }
 
-        [HttpPut]
+        /// <summary>
+        /// Edit a certain message
+        /// </summary>
+        /// <param name="updatedMessage"></param>
+        /// <returns>The edited message with its info</returns>
+        [HttpPut("EditMessage")]
         public async Task<ActionResult<MessageViewModel>> UpdateMessage(MessageUpdateDTO updatedMessage)
         {
             try
@@ -96,6 +111,11 @@ namespace GuestbookApplication.Controllers
             }
         }
 
+        /// <summary>
+        /// Add a reply to a certain message
+        /// </summary>
+        /// <param name="reply"></param>
+        /// <returns>a list of the message with te replies on it</returns>
         [HttpPost("ReplyToMessage")]
         public async Task<ActionResult<List<ReplyViewModel>>> ReplyToMessage(ReplyDTO reply)
         {
@@ -114,6 +134,11 @@ namespace GuestbookApplication.Controllers
             }
         }
 
+        /// <summary>
+        /// get replies on a certain message
+        /// </summary>
+        /// <param name="messageId"></param>
+        /// <returns>replies of the message</returns>
         [HttpGet("GetReplies/{messageId}")]
         public async Task<ActionResult<ReplyViewModel>> GetMessageReplies(int messageId)
         {
