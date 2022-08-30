@@ -23,7 +23,7 @@ namespace GuestbookApplication.Controllers
         {
             try
             {
-                var users = await _context.QueryAsync<UserViewModel>("select * from users");
+                var users = await _context.QueryAsync<UserViewModel>("select * from [user]");
                 return Ok(users);
             }
             catch (Exception ex)
@@ -44,7 +44,7 @@ namespace GuestbookApplication.Controllers
                 if (userId < 1)
                     return BadRequest("Invalid user id.");
 
-                var user = await _context.QueryFirstAsync<UserViewModel>("select * from users where userId = @Id", new { Id = userId });
+                var user = await _context.QueryFirstAsync<UserViewModel>("select * from [user] where userId = @Id", new { Id = userId });
                 return Ok(user);
             }
             catch (Exception ex)
@@ -66,7 +66,7 @@ namespace GuestbookApplication.Controllers
                 if (user == null)
                     return BadRequest("Invalid user.");
 
-                await _context.ExecuteAsync("insert into users (username, password) values (@Username, @Password)", user);
+                await _context.ExecuteAsync("insert into [user] (username, password) values (@Username, @Password)", user);
                 return Ok(await SelectAllUsers());
             }
             catch (Exception ex)
@@ -88,7 +88,7 @@ namespace GuestbookApplication.Controllers
                 if (user == null)
                     return BadRequest("Invalid user.");
 
-                var existingUser = await _context.QueryAsync<User>("select * from users where userName = @Username and password = @Password", new { UserName = user.UserName, Password = user.Password });
+                var existingUser = await _context.QueryAsync<User>("select * from [user] where userName = @Username and password = @Password", new { UserName = user.UserName, Password = user.Password });
 
                 if (existingUser is null || !existingUser.Any())
                     return Unauthorized("Invalid username or password");
@@ -113,7 +113,7 @@ namespace GuestbookApplication.Controllers
                 if (user == null)
                     return BadRequest("Invalid user.");
 
-                await _context.ExecuteAsync("update users set username = @UserName, password = @Password where userid = @Id", new { UserName = user.UserName, Password = user.Password, Id = user.UserId});
+                await _context.ExecuteAsync("update [user] set username = @UserName, password = @Password where userid = @Id", new { UserName = user.UserName, Password = user.Password, Id = user.UserId});
                 return Ok(await SelectAllUsers());
             }
             catch (Exception ex)
@@ -130,7 +130,7 @@ namespace GuestbookApplication.Controllers
                 if (userId < 1)
                     return BadRequest("Invalid user id.");
 
-                await _context.ExecuteAsync("delete from users where userId = @Id", new { Id = userId });
+                await _context.ExecuteAsync("delete from [user] where userId = @Id", new { Id = userId });
                 return Ok(await SelectAllUsers());
             }
             catch (Exception ex)
@@ -152,7 +152,7 @@ namespace GuestbookApplication.Controllers
                 if (userId < 1)
                     return BadRequest("Invalid user id.");
 
-                var message = await _context.QueryFirstAsync<MessageViewModel>("select * from messages where userId = @Id", new { Id = userId });
+                var message = await _context.QueryFirstAsync<MessageViewModel>("select * from message where userId = @Id", new { Id = userId });
                 return Ok(message);
             }
             catch (Exception ex)
@@ -164,7 +164,7 @@ namespace GuestbookApplication.Controllers
 
         private async Task<IEnumerable<UserViewModel>> SelectAllUsers()
         {
-            return await _context.QueryAsync<UserViewModel>("select * from users");
+            return await _context.QueryAsync<UserViewModel>("select * from [user]");
         }
     }
 }

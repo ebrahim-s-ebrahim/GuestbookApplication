@@ -23,7 +23,7 @@ namespace GuestbookApplication.Controllers
         {
             try
             {
-                var messages = await _context.QueryAsync<MessageViewModel>("select * from messages");
+                var messages = await _context.QueryAsync<MessageViewModel>("select * from message");
                 return Ok(messages);
             }
             catch (Exception ex)
@@ -45,7 +45,7 @@ namespace GuestbookApplication.Controllers
                 if (messageId < 1)
                     return BadRequest("Invalid message id.");
 
-                var message = await _context.QueryFirstAsync<MessageViewModel>("select * from messages where messageId = @Id", new { Id = messageId });
+                var message = await _context.QueryFirstAsync<MessageViewModel>("select * from message where messageId = @Id", new { Id = messageId });
                 return Ok(message);
             }
             catch (Exception ex)
@@ -67,7 +67,7 @@ namespace GuestbookApplication.Controllers
                 if (message == null)
                     return BadRequest("Invalid message.");
 
-                await _context.ExecuteAsync("insert into messages (messageContent, userId) values (@MessageContent, @UserId)", message);
+                await _context.ExecuteAsync("insert into message (messageContent, userId) values (@MessageContent, @UserId)", message);
                 return Ok(await SelectAllMessages());
             }
             catch (Exception ex)
@@ -86,8 +86,8 @@ namespace GuestbookApplication.Controllers
         {
             try
             {
-                await _context.ExecuteAsync("update messages set messageContent = @MessageContent where messageId = @Id", new { MessageContent = updatedMessage.MessageContent, Id = updatedMessage.MessageId });
-                var message = await _context.QueryFirstAsync<MessageViewModel>("select * from messages where messageId = @Id", new { Id = updatedMessage.MessageId });
+                await _context.ExecuteAsync("update message set messageContent = @MessageContent where messageId = @Id", new { MessageContent = updatedMessage.MessageContent, Id = updatedMessage.MessageId });
+                var message = await _context.QueryFirstAsync<MessageViewModel>("select * from message where messageId = @Id", new { Id = updatedMessage.MessageId });
                 return Ok(message);
 
             }
@@ -102,7 +102,7 @@ namespace GuestbookApplication.Controllers
         {
             try
             {
-                await _context.ExecuteAsync("delete from messages where messageId = @Id", new { Id = messageId });
+                await _context.ExecuteAsync("delete from message where messageId = @Id", new { Id = messageId });
                 return Ok();
             }
             catch (Exception ex)
@@ -124,7 +124,7 @@ namespace GuestbookApplication.Controllers
                 if (reply == null)
                     return BadRequest("Invalid message.");
 
-                await _context.ExecuteAsync("insert into messages (messageContent, userId, parentMessageId) values (@MessageContent, @UserId,@ParentMessageId)", reply);
+                await _context.ExecuteAsync("insert into message (messageContent, userId, parentMessageId) values (@MessageContent, @UserId,@ParentMessageId)", reply);
 
                 return Ok(await SelectAllMessages());
             }
@@ -147,11 +147,11 @@ namespace GuestbookApplication.Controllers
                 if (messageId < 1)
                     return BadRequest("Invalid message id.");
 
-                var parent = await _context.QueryFirstAsync<ReplyViewModel>("select * from messages where messageId = @Id", new { Id = messageId });
+                var parent = await _context.QueryFirstAsync<ReplyViewModel>("select * from message where messageId = @Id", new { Id = messageId });
                 if (parent is null)
                     return NotFound("Message not found.");
 
-                parent.Children = (await _context.QueryAsync<MessageViewModel>("select * from messages where ParentMessageId = @Id", new { Id = messageId })).ToList();
+                parent.Children = (await _context.QueryAsync<MessageViewModel>("select * from message where ParentMessageId = @Id", new { Id = messageId })).ToList();
                 return Ok(parent);
             }
             catch (Exception ex)
@@ -164,7 +164,7 @@ namespace GuestbookApplication.Controllers
 
         private async Task<IEnumerable<MessageViewModel>> SelectAllMessages()
         {
-            return await _context.QueryAsync<MessageViewModel>("select * from messages");
+            return await _context.QueryAsync<MessageViewModel>("select * from message");
         }
     }
 }
